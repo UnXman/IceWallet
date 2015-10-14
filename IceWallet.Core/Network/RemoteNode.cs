@@ -426,7 +426,7 @@ namespace IceWallet.Network
                 {
                     if (missions.Count == 0 && Blockchain.Default.Height < Blockchain.Default.HeaderHeight)
                     {
-                        if (!await SendMessageAsync("getblocks", GetBlocksPayload.Create(new[] { Blockchain.Default.CurrentBlockHash }, Blockchain.Default.CurrentHeaderHash)))
+                        if (!await SendMessageAsync("getblocks", GetBlocksPayload.Create(new[] { Blockchain.Default.CurrentBlockHash })))
                             break;
                     }
                 }
