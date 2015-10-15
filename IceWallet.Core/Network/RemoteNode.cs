@@ -360,7 +360,7 @@ namespace IceWallet.Network
         {
             if (!await SendMessageAsync("version", VersionPayload.Create(localNode.LocalEndpoint, RemoteEndpoint, Blockchain.Default?.Height ?? 0)))
                 return;
-            Message message = await ReceiveMessageAsync(Timeout.InfiniteTimeSpan);
+            Message message = await ReceiveMessageAsync(TimeSpan.FromSeconds(30));
             if (message == null)
                 return;
             if (message.Command != "version")
@@ -399,7 +399,7 @@ namespace IceWallet.Network
             }
             if (!await SendMessageAsync("verack"))
                 return;
-            message = await ReceiveMessageAsync(Timeout.InfiniteTimeSpan);
+            message = await ReceiveMessageAsync(TimeSpan.FromSeconds(30));
             if (message == null) return;
             if (message.Command != "verack")
             {
@@ -430,7 +430,7 @@ namespace IceWallet.Network
                             break;
                     }
                 }
-                TimeSpan timeout = missions.Count == 0 ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds(60);
+                TimeSpan timeout = missions.Count == 0 ? TimeSpan.FromMinutes(30) : TimeSpan.FromSeconds(60);
                 message = await ReceiveMessageAsync(timeout);
                 if (message == null) break;
                 try
