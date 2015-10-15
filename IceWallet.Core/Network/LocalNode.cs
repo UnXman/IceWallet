@@ -126,7 +126,7 @@ namespace IceWallet.Network
                     {
                         lock (connectedPeers)
                         {
-                            tasks = connectedPeers.Values.Select(p => p.RequestPeersAsync()).ToArray();
+                            tasks = connectedPeers.Values.ToArray().Select(p => p.RequestPeersAsync()).ToArray();
                         }
                     }
                     else
