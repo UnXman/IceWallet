@@ -12,15 +12,15 @@ namespace IceWallet.Cryptography.ECC
         private ECCurve curve;
 
         public ECDsa(byte[] privateKey, ECCurve curve)
-            : this(curve.G * privateKey, curve)
+            : this(curve.G * privateKey)
         {
             this.privateKey = privateKey;
         }
 
-        public ECDsa(ECPoint publicKey, ECCurve curve)
+        public ECDsa(ECPoint publicKey)
         {
             this.publicKey = publicKey;
-            this.curve = curve;
+            this.curve = publicKey.Curve;
         }
 
         private BigInteger CalculateE(BigInteger n, byte[] message)

@@ -454,7 +454,16 @@ namespace IceWallet.Core.Scripts
             }
             HashType hashType = (HashType)signature[signature.Length - 1];
             byte[] hash = tx.GetHashForVerification(hashType, inputIndex, scriptPubKey);
-            ECDsa signer = new ECDsa(ECPoint.DecodePoint(pubKey, ECCurve.Secp256k1), ECCurve.Secp256k1);
+            ECPoint pubKeyPoint;
+            try
+            {
+                pubKeyPoint = ECPoint.DecodePoint(pubKey, ECCurve.Secp256k1);
+            }
+            catch
+            {
+                return false;
+            }
+            ECDsa signer = new ECDsa(pubKeyPoint);
             return signer.VerifySignature(hash, r, s);
         }
     }
