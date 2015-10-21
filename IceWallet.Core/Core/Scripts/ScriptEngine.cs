@@ -33,12 +33,12 @@ namespace IceWallet.Core.Scripts
             byte[] scriptSig = tx.Inputs[inputIndex].Script;
             byte[] redeemScript = null;
             bool p2sh = scriptSig.Length == 23 && scriptSig[0] == (byte)ScriptOp.OP_HASH160 && scriptSig[1] == 20 && scriptSig[22] == (byte)ScriptOp.OP_EQUAL;
-            if (!ExecuteScript(scriptSig))
+            if (!ExecuteScript(scriptSig, true))
                 return false;
             if (p2sh) redeemScript = stack.PeekBytes();
-            if (!ExecuteScript(scriptPubKey))
+            if (!ExecuteScript(scriptPubKey, false))
                 return false;
-            if (p2sh && !ExecuteScript(redeemScript))
+            if (p2sh && !ExecuteScript(redeemScript, false))
                 return false;
             return stack.Count == 1 && stack.PeekBool();
         }
@@ -379,7 +379,6 @@ namespace IceWallet.Core.Scripts
                     break;
                 case ScriptOp.OP_CHECKMULTISIG:
                 case ScriptOp.OP_CHECKMULTISIGVERIFY:
-                    //TODO:验证多方签名
                     {
                         if (stack.Count < 4) return false;
                         int n = (int)stack.PopBigInteger();
@@ -425,15 +424,16 @@ namespace IceWallet.Core.Scripts
             return true;
         }
 
-        private bool ExecuteScript(byte[] script)
+        private bool ExecuteScript(byte[] script, bool push_only)
         {
             using (MemoryStream ms = new MemoryStream(script, false))
             using (BinaryReader opReader = new BinaryReader(ms))
             {
                 while (opReader.BaseStream.Position < script.Length)
                 {
-                    if (!ExecuteOp((ScriptOp)opReader.ReadByte(), opReader))
-                        return false;
+                    ScriptOp opcode = (ScriptOp)opReader.ReadByte();
+                    if (push_only && opcode > ScriptOp.OP_16) return false;
+                    if (!ExecuteOp(opcode, opReader)) return false;
                 }
             }
             return true;

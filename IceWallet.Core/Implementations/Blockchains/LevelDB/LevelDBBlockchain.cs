@@ -342,7 +342,7 @@ namespace IceWallet.Implementations.Blockchains.LevelDB
             }
             else
             {
-                TreeNode<Block> main = header_chain.Leaves.OrderBy(p => p.Item.Bits).ThenBy(p => p.Item.Hash).First();
+                TreeNode<Block> main = header_chain.Leaves.OrderBy(p => p.Item.Bits).ThenByDescending(p => p.Height).ThenBy(p => p.Item.Hash).First();
                 if (main.Item.Hash != current_header_hash)
                 {
                     TreeNode<Block> fork = header_chain.Nodes[current_header_hash];

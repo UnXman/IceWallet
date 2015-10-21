@@ -17,21 +17,27 @@ namespace IceWallet.Core
         public uint Nonce;
         public Transaction[] Transactions;
 
+        [NonSerialized]
+        private Block _header = null;
         public Block Header
         {
             get
             {
                 if (IsHeader) return this;
-                return new Block
+                if (_header == null)
                 {
-                    Version = Version,
-                    PrevBlock = PrevBlock,
-                    MerkleRoot = MerkleRoot,
-                    Timestamp = Timestamp,
-                    Bits = Bits,
-                    Nonce = Nonce,
-                    Transactions = new Transaction[0]
-                };
+                    _header = new Block
+                    {
+                        Version = Version,
+                        PrevBlock = PrevBlock,
+                        MerkleRoot = MerkleRoot,
+                        Timestamp = Timestamp,
+                        Bits = Bits,
+                        Nonce = Nonce,
+                        Transactions = { }
+                    };
+                }
+                return _header;
             }
         }
         public override InventoryType InventoryType => InventoryType.MSG_BLOCK;
@@ -39,15 +45,15 @@ namespace IceWallet.Core
 
         public override void Deserialize(BinaryReader reader)
         {
-            this.Version = reader.ReadUInt32();
-            this.PrevBlock = reader.ReadSerializable<UInt256>();
-            this.MerkleRoot = reader.ReadSerializable<UInt256>();
-            this.Timestamp = reader.ReadUInt32();
-            this.Bits = reader.ReadUInt32();
-            this.Nonce = reader.ReadUInt32();
+            Version = reader.ReadUInt32();
+            PrevBlock = reader.ReadSerializable<UInt256>();
+            MerkleRoot = reader.ReadSerializable<UInt256>();
+            Timestamp = reader.ReadUInt32();
+            Bits = reader.ReadUInt32();
+            Nonce = reader.ReadUInt32();
             if (Hash > Bits.SetCompact().ToUInt256())
                 throw new FormatException();
-            this.Transactions = reader.ReadSerializableArray<Transaction>();
+            Transactions = reader.ReadSerializableArray<Transaction>();
             if (Transactions.Length > 0 && MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != MerkleRoot)
                 throw new FormatException();
         }
