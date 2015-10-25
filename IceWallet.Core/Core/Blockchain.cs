@@ -183,10 +183,7 @@ namespace IceWallet.Core
             Block last = GetHeader(prevHash);
             if ((prevHeight + 1) % nInterval == 0)
             {
-                uint blockstogoback = nInterval - 1;
-                if (prevHeight + 1 != nInterval)
-                    blockstogoback = nInterval;
-                Block first = GetBlock(prevHeight - blockstogoback);
+                Block first = GetBlock(prevHeight - nInterval + 1);
                 uint nActualTimespan = last.Timestamp - first.Timestamp;
                 if (nActualTimespan < nTargetTimespan / 4)
                     nActualTimespan = nTargetTimespan / 4;

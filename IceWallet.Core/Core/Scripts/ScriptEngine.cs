@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
+using BooleanStack = System.Collections.Generic.Stack<bool>;
 using ECDsa = IceWallet.Cryptography.ECC.ECDsa;
 
 namespace IceWallet.Core.Scripts
@@ -13,12 +14,13 @@ namespace IceWallet.Core.Scripts
     {
         private const int MAXSTEPS = 201;
 
-        private Transaction tx;
-        private uint inputIndex;
-        private byte[] scriptPubKey;
+        private readonly Transaction tx;
+        private readonly uint inputIndex;
+        private readonly byte[] scriptPubKey;
 
-        private Stack stack = new Stack();
-        private Stack altStack = new Stack();
+        private readonly Stack stack = new Stack();
+        private readonly Stack altStack = new Stack();
+        private readonly BooleanStack vfExec = new BooleanStack();
         private int nOpCount = 0;
 
         public ScriptEngine(Transaction tx, uint index, byte[] scriptPubKey)
@@ -45,6 +47,7 @@ namespace IceWallet.Core.Scripts
 
         private bool ExecuteOp(ScriptOp opcode, BinaryReader opReader)
         {
+            bool fExec = vfExec.All(p => p);
             if (opcode > ScriptOp.OP_16 && ++nOpCount > MAXSTEPS) return false;
             if (opcode == ScriptOp.OP_CAT ||
                  opcode == ScriptOp.OP_SUBSTR ||
@@ -62,6 +65,8 @@ namespace IceWallet.Core.Scripts
                  opcode == ScriptOp.OP_LSHIFT ||
                  opcode == ScriptOp.OP_RSHIFT)
                 return false;
+            if (!fExec && (opcode < ScriptOp.OP_IF || opcode > ScriptOp.OP_ENDIF))
+                return true;
             int remain = (int)(opReader.BaseStream.Length - opReader.BaseStream.Position);
             if (opcode >= ScriptOp.OP_PUSHBYTES1 && opcode <= ScriptOp.OP_PUSHBYTES75)
             {
@@ -134,9 +139,26 @@ namespace IceWallet.Core.Scripts
                     break;
                 case ScriptOp.OP_IF:
                 case ScriptOp.OP_NOTIF:
+                    {
+                        bool fValue = false;
+                        if (fExec)
+                        {
+                            if (stack.Count < 1) return false;
+                            fValue = stack.PopBool();
+                            if (opcode == ScriptOp.OP_NOTIF)
+                                fValue = !fValue;
+                        }
+                        vfExec.Push(fValue);
+                    }
+                    break;
                 case ScriptOp.OP_ELSE:
+                    if (vfExec.Count == 0) return false;
+                    vfExec.Push(!vfExec.Pop());
+                    break;
                 case ScriptOp.OP_ENDIF:
-                    return false;
+                    if (vfExec.Count == 0) return false;
+                    vfExec.Pop();
+                    break;
                 case ScriptOp.OP_VERIFY:
                     if (stack.Count < 1) return false;
                     if (stack.PeekBool())
