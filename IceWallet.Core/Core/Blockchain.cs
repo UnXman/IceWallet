@@ -156,6 +156,12 @@ namespace IceWallet.Core
             return nCompact;
         }
 
+        public virtual Block GetHeader(uint height)
+        {
+            if (height == 0) return GenesisBlock.Header;
+            return null;
+        }
+
         public virtual Block GetHeader(UInt256 hash)
         {
             return GetBlock(hash)?.Header;
@@ -183,7 +189,7 @@ namespace IceWallet.Core
             Block last = GetHeader(prevHash);
             if ((prevHeight + 1) % nInterval == 0)
             {
-                Block first = GetBlock(prevHeight - nInterval + 1);
+                Block first = GetHeader(prevHeight - nInterval + 1);
                 uint nActualTimespan = last.Timestamp - first.Timestamp;
                 if (nActualTimespan < nTargetTimespan / 4)
                     nActualTimespan = nTargetTimespan / 4;
