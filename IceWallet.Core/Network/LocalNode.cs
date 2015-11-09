@@ -260,7 +260,8 @@ namespace IceWallet.Network
                     {
                         unconnectedPeers.Remove(remoteNode.RemoteEndpoint);
                         pendingPeers.Remove(remoteNode);
-                        connectedPeers.Remove(remoteNode.RemoteEndpoint);
+                        if (remoteNode.RemoteEndpoint != null)
+                            connectedPeers.Remove(remoteNode.RemoteEndpoint);
                     }
                 }
             }
