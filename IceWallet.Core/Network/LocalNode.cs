@@ -73,7 +73,7 @@ namespace IceWallet.Network
             {
                 return;
             }
-            IPAddress ipAddress = entry.AddressList.FirstOrDefault()?.MapToIPv6();
+            IPAddress ipAddress = entry.AddressList.FirstOrDefault(p => p.AddressFamily == AddressFamily.InterNetwork || p.IsIPv6Teredo)?.MapToIPv6();
             if (ipAddress == null) return;
             await ConnectToPeerAsync(new IPEndPoint(ipAddress, DEFAULT_PORT));
         }
@@ -261,7 +261,7 @@ namespace IceWallet.Network
                         unconnectedPeers.Remove(remoteNode.RemoteEndpoint);
                         pendingPeers.Remove(remoteNode);
                         if (remoteNode.RemoteEndpoint != null)
-                            connectedPeers.Remove(remoteNode.RemoteEndpoint);
+                        connectedPeers.Remove(remoteNode.RemoteEndpoint);
                     }
                 }
             }
@@ -322,7 +322,14 @@ namespace IceWallet.Network
             if (Interlocked.Exchange(ref started, 1) == 0)
             {
                 connectThread.Start();
+                try
+                {
                 listener.Start();
+                }
+                catch (SocketException)
+                {
+                    return;
+                }
                 while (disposed == 0)
                 {
                     TcpClient tcp;
@@ -339,6 +346,10 @@ namespace IceWallet.Network
                     {
                         pendingPeers.Add(remoteNode);
                     }
+                    remoteNode.Disconnected += RemoteNode_Disconnected;
+                    remoteNode.PeersReceived += RemoteNode_PeersReceived;
+                    remoteNode.BlockReceived += RemoteNode_BlockReceived;
+                    remoteNode.TransactionReceived += RemoteNode_TransactionReceived;
                     remoteNode.StartProtocol();
                 }
             }
